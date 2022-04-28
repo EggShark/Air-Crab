@@ -3,9 +3,15 @@
 use std::io;
 use std::sync::mpsc::channel;
 use std::thread;
-use std::time::Duration;
 
 fn main() {
+    let mut pain = String::from("a");
+    println!("{}", pain.as_str());
+    pain.push_str(" boy");
+    pain.pop();
+    println!("why do you break {} , {}", pain.as_str(), {pain.as_str() == "a bo"});
+
+
     let (send, recv) = channel();
     thread::spawn(move || {
         loop {
@@ -15,22 +21,36 @@ fn main() {
         }
     });
 
-    let mut lastMessage = String::from("a");
     loop {
         let a = recv.try_recv();
-        let a = match a {
-            Ok(mut file) => {
-                if file.ends_with("\n"){
+        match a {
+            Ok(mut file) => {if file.ends_with("\n"
+                ){
                     file.pop();
                 }
-                lastMessage = file;
-                &lastMessage
+                let str_file: &str = file.as_str();
+                println!("before match {} {}", str_file, str_file == "a");
+                match str_file {
+                    "play" => {
+                        play();
+                    },
+                    "pause" => {
+                        pause();
+                    },
+                    _ => {
+                        println!("catch all you {} {}", str_file, str_file == "e");
+                    },
+                };
             },
-            Err(_error) => {
-                &lastMessage
-            },
+            Err(_error) => {},
         };
-        println!("{}", a);
-        thread::sleep(Duration::from_secs(2));
     }
+}
+
+fn play(){
+    println!("play");
+}
+
+fn pause(){
+    println!("pause");
 }
