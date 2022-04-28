@@ -5,11 +5,11 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 fn main() {
-    let mut pain = String::from("a");
-    println!("{}", pain.as_str());
-    pain.push_str(" boy");
-    pain.pop();
-    println!("why do you break {} , {}", pain.as_str(), {pain.as_str() == "a bo"});
+    // let mut pain = String::from("a");
+    // println!("{}", pain.as_str());
+    // pain.push_str(" boy");
+    // pain.pop();
+    // assert_eq!(pain.as_str(), "a boy");
 
 
     let (send, recv) = channel();
@@ -27,10 +27,11 @@ fn main() {
             Ok(mut file) => {if file.ends_with("\n"
                 ){
                     file.pop();
+                    if file.ends_with("\r"){
+                        file.pop();
+                    }
                 }
-                let str_file: &str = file.as_str();
-                println!("before match {} {}", str_file, str_file == "a");
-                match str_file {
+                match file.as_str() {
                     "play" => {
                         play();
                     },
@@ -38,7 +39,7 @@ fn main() {
                         pause();
                     },
                     _ => {
-                        println!("catch all you {} {}", str_file, str_file == "e");
+                        println!("catch all you {} {}", file.as_str(), file.as_str() == "e");
                     },
                 };
             },
