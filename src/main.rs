@@ -5,12 +5,7 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 fn main() {
-    // let mut pain = String::from("a");
-    // println!("{}", pain.as_str());
-    // pain.push_str(" boy");
-    // pain.pop();
-    // assert_eq!(pain.as_str(), "a boy");
-
+    println!("{:?}", "Hello there general".chars().position(|c| c == ' ').unwrap());
 
     let (send, recv) = channel();
     thread::spawn(move || {
@@ -24,14 +19,16 @@ fn main() {
     loop {
         let a = recv.try_recv();
         match a {
-            Ok(mut file) => {if file.ends_with("\n"
-                ){
+            Ok(mut file) => {
+                if file.ends_with("\n") {
                     file.pop();
                     if file.ends_with("\r"){
                         file.pop();
                     }
                 }
-                match file.as_str() {
+                // split into vector
+                let args = args_spliter(file.as_str()); 
+                match args[0] {
                     "play" => {
                         play();
                     },
@@ -39,7 +36,7 @@ fn main() {
                         pause();
                     },
                     _ => {
-                        println!("catch all you {} {}", file.as_str(), file.as_str() == "e");
+                        println!("not a command");
                     },
                 };
             },
@@ -54,4 +51,39 @@ fn play(){
 
 fn pause(){
     println!("pause");
+}
+
+fn args_spliter(arg: &str) -> Vec<&str>{
+    let mut vector = Vec::new();
+    let mut lastSpace = 0;
+    let mut i = 0;
+    loop {
+        if i >= arg.len() {
+            break;
+        }
+        let letter = arg.chars().nth(i).unwrap();
+        if letter == '\"'{
+            let split = &arg[i+1..];
+            let endQoute = split.find("\"");
+        }
+        else if letter == '\''{
+            let split = &arg[i+1..];
+            let endQoute = split.find("\'");
+            let endQoute = match endQoute{
+                Some(x) => x,
+                None => panic!("No End Qoute"), // temperarry error handling need more robust later
+            };
+            vector.push(&split[..endQoute]);
+            lastSpace = i + endQoute + 3; // assumes there is a space after qoutes could cuase many bugs
+            i += lastSpace + 2;
+        }
+        else if letter == ' '{
+            vector.push(&arg[lastSpace..i]);
+            lastSpace = i+1;
+        }
+        i += 1;
+    }
+    vector.push(&arg[lastSpace..]);
+    println!("{:?}", vector);
+    vector
 }
