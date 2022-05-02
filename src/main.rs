@@ -65,6 +65,13 @@ fn args_spliter(arg: &str) -> Vec<&str>{
         if letter == '\"'{
             let split = &arg[i+1..];
             let endQoute = split.find("\"");
+            let endQoute = match endQoute{
+                Some(x) => x,
+                None => panic!("No End Qoute"), // temperarry error handling need more robust later
+            };
+            vector.push(&split[..endQoute]);
+            lastSpace = i + endQoute + 3; // assumes there is a space after qoutes could cuase many bugs
+            i += endQoute + 3; // I fixed a bug but now it works dont touch this line
         }
         else if letter == '\''{
             let split = &arg[i+1..];
@@ -75,7 +82,7 @@ fn args_spliter(arg: &str) -> Vec<&str>{
             };
             vector.push(&split[..endQoute]);
             lastSpace = i + endQoute + 3; // assumes there is a space after qoutes could cuase many bugs
-            i += lastSpace + 2;
+            i += endQoute + 3; // I fixed a bug but now it works dont touch this line
         }
         else if letter == ' '{
             vector.push(&arg[lastSpace..i]);
