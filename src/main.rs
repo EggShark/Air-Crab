@@ -3,7 +3,10 @@
 use std::io;
 use std::sync::mpsc::channel;
 use std::thread;
-use std::fs;
+use std::io::prelude::*;
+use std::io::BufReader;
+use std::fs::File;
+use std::str;
 
 fn main() {
     let (send, recv) = channel();
@@ -14,7 +17,7 @@ fn main() {
             send.send(message);
         }
     });
-
+//-------------------- thread 1 ^ thread 2 bellow;
     loop {
         let a = recv.try_recv();
         match a {
@@ -25,15 +28,15 @@ fn main() {
                         file.pop();
                     }
                 }
-                let args = args_spliter(file.as_str());
-                match args[0] {
+                let args = args_spliter(file);
+                match args[0].as_str() {
                     "play" => {
                         // makes sure the user specified something to play
                         if args.len() < 2 {
                             println!("no Song speicifed");
                         }
                         else{
-                            play(args[1]);
+                            play(args[1].as_str());
                         }
                     },
                     "pause" => {
@@ -50,12 +53,25 @@ fn main() {
 }
 
 fn play(fileName: &str){
+    // this will be way harder
     // find file
     // async play ---> may require a second channel :)
     // pause when pause is entered
-    let filePath = String::from("music/") + fileName;
-    let contents = fs::read_to_string(filePath).expect("Something went wrong reading the file"); 
-    println!("play {}", contents);
+    let file_path = String::from("music/") + fileName;
+    let file = File::open(file_path).unwrap();
+    let mut reader = BufReader::new(file);
+    let mut header: [u8; 4] = [0; 4];
+    reader.read_exact(&mut header[..]).unwrap();
+    println!("data in buffer {:?}", header);
+    if &header == b"RIFF" {
+        println!("its a RIFF");
+    }
+    else {
+        println!("not a RIFF");
+    }
+    let mut wave_fmt: [u8; 7] = [0;7];
+    reader.read_exact(&mut wave_fmt[8..]).unwrap();
+    assert_eq!(b"WAVEfmt", &wave_fmt);
 }
 
 fn pause(){
@@ -63,43 +79,16 @@ fn pause(){
     println!("pause");
 }
 
-fn args_spliter(arg: &str) -> Vec<&str>{
-    let mut vector = Vec::new();
-    let mut last_space = 0;
-    let mut i = 0;
-    loop {
-        if i >= arg.len() {
-            break;
-        }
-        let letter = arg.chars().nth(i).unwrap();
-        if letter == '\"'{
-            let split = &arg[i+1..];
-            let end_qoute = split.find("\"");
-            let end_qoute = match end_qoute{
-                Some(x) => x,
-                None => panic!("No End Qoute"), // temperarry error handling need more robust later
-            };
-            vector.push(&split[..end_qoute]);
-            last_space = i + end_qoute + 3; // assumes there is a space after qoutes could cuase many bugs
-            i += end_qoute + 3; // I fixed a bug but now it works dont touch this line
-        }
-        else if letter == '\''{
-            let split = &arg[i+1..];
-            let end_qoute = split.find("\'");
-            let end_qoute = match end_qoute{
-                Some(x) => x,
-                None => panic!("No End Qoute"), // temperarry error handling need more robust later
-            };
-            vector.push(&split[..end_qoute]);
-            last_space = i + end_qoute + 3; // assumes there is a space after qoutes could cuase many bugs
-            i += end_qoute + 3; // I fixed a bug but now it works dont touch this line
-        }
-        else if letter == ' '{
-            vector.push(&arg[last_space..i]);
-            last_space = i+1;
-        }
-        i += 1;
+fn args_spliter(arg: String) -> Vec<String>{
+    let mut args = Vec::new();
+    let mut chars = arg.chars();
+    
+    while let Some(letter) = chars.next() {
+        args.push(match letter {
+            ' ' => continue,
+            quote @ ('\"' | '\'') => chars.by_ref().take_while(|ch| ch != &quote).collect(),
+            c => String::from(c) + &chars.by_ref().take_while(|ch| ch != &' ').collect::<String>(),
+        });
     }
-    vector.push(&arg[last_space..]);
-    vector
+    args
 }
