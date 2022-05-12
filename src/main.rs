@@ -69,9 +69,19 @@ fn play(fileName: &str){
     else {
         println!("not a RIFF");
     }
-    let mut wave_fmt: [u8; 7] = [0;7];
-    reader.read_exact(&mut wave_fmt[8..]).unwrap();
-    assert_eq!(b"WAVEfmt", &wave_fmt);
+
+    let mut file_size: [u8; 4] = [0;4];
+    reader.read_exact(&mut file_size[..]).unwrap();
+    let file_size = u32::from_le_bytes(file_size);
+    println!("{}", file_size);
+
+    let mut format: [u8; 4] = [0;4];
+    reader.read_exact(&mut format[..]).unwrap();
+    if b"WAVE" == &format {
+        //do stuff
+        println!("an audio file");
+    }
+    else {panic!("NOT A WAVE FILE");}
 }
 
 fn pause(){
