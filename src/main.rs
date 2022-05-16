@@ -127,6 +127,7 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
 
     let mut audio_format: [u8;2] = [0;2];
     file.read_exact(&mut audio_format[..]).unwrap();
+    let audio_format = u16::from_le_bytes(audio_format);
     // need to process that 1 = pcm any other number indicates some kind of compression
 
     let mut channel_num: [u8;2] =[0;2];
@@ -160,6 +161,7 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     //this shouldn't exist if its pcm but data shows otherwize but its the size in bytes simillar to fmt chunk size
 
     let processed_song = Song{
+        audio_format: audio_format,
         channels: channel_num,
         sample_rate: sample_rate,
         byte_rate: byte_rate,

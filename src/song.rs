@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub struct Song {
+    pub audio_format: u16,
     pub channels: u16,
     pub sample_rate: u32,
     pub byte_rate: u32,
