@@ -1,12 +1,10 @@
-pub fn test_func(){
-    println!("test works");
-}
-
+#[derive(Debug)]
 pub struct Song {
-    channels: u16,
-    sample_rate: u64,
-    byte_rate: u64,
-    block_align: u8,
-    bits_per_sample: u8
+    pub channels: u16,
+    pub sample_rate: u32,
+    pub byte_rate: u32,
+    pub block_align: u16,
+    pub bits_per_sample: u16,
+    pub extra_perams_size: u16
     //data somewhere
 }

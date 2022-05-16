@@ -12,7 +12,6 @@ mod song;
 use song::Song;
 
 fn main() {
-    song::test_func();
     let (send, recv) = channel();
     thread::spawn(move || {
         loop {
@@ -46,6 +45,9 @@ fn main() {
                     "pause" => {
                         pause();
                     },
+                    "exit" => {
+                        break;
+                    },
                     _ => {
                         println!("not a command");
                     },
@@ -63,8 +65,7 @@ fn play(file_name: &str){
     // pause when pause is entered
     let file_path = String::from("music/") + file_name;
     let file = File::open(file_path).unwrap();
-    let reader = BufReader::new(file);
-    drop(file);
+    let mut reader = BufReader::new(file);
     let mut header: [u8; 4] = [0; 4];
     reader.read_exact(&mut header[..]).unwrap();
     println!("data in buffer {:?}", header);
@@ -89,6 +90,8 @@ fn play(file_name: &str){
     else {
         panic!("NOT A WAVE FILE");
     }
+    let song = song_constructor(&mut reader);
+    println!("{:?}",song);
 }
 
 fn pause(){
@@ -110,8 +113,60 @@ fn args_spliter(arg: String) -> Vec<String>{
     args
 }
 
-fn song_constructor(file: &BufReader<File>) -> Song{
+fn song_constructor(file: &mut BufReader<File>) -> Song{
     //read fmt chunk and create struct
-    let mut fmt_size: [u8; 4] = [0;4];
-    file.read_exact(&mut fmt_size);
+    let mut fmt_header: [u8; 4] = [0;4];
+    file.read_exact(&mut fmt_header[..]).unwrap();
+    if &fmt_header != b"fmt " {
+        panic!("header not found");
+    }
+    // gets size of fmt chunk
+    let mut fmt_size: [u8;4] = [0;4];
+    file.read_exact(&mut fmt_size[..]).unwrap();
+    let _fmt_size = u32::from_le_bytes(fmt_size);
+
+    let mut audio_format: [u8;2] = [0;2];
+    file.read_exact(&mut audio_format[..]).unwrap();
+    // need to process that 1 = pcm any other number indicates some kind of compression
+
+    let mut channel_num: [u8;2] =[0;2];
+    file.read_exact(&mut channel_num[..]).unwrap();
+    let channel_num = u16::from_le_bytes(channel_num);
+    // turn into u32 1 = mono 2 = stero;
+
+    let mut sample_rate: [u8;4] = [0;4];
+    file.read_exact(&mut sample_rate[..]).unwrap();
+    let sample_rate = u32::from_le_bytes(sample_rate);
+    // turn into u32
+
+    let mut byte_rate: [u8;4] = [0;4];
+    file.read_exact(&mut byte_rate[..]).unwrap();
+    let byte_rate = u32::from_le_bytes(byte_rate);
+    // another u32 not sure why this exists
+
+    let mut block_align: [u8;2] = [0;2];
+    file.read_exact(&mut block_align[..]).unwrap();
+    let block_align = u16::from_le_bytes(block_align);
+    // a u16 The number of bytes for one sample including all channels.
+
+    let mut bits_per_sample: [u8;2] = [0;2];
+    file.read_exact(&mut bits_per_sample[..]).unwrap();
+    let bits_per_sample = u16::from_le_bytes(bits_per_sample);
+    // if its an 8 = 8bits 16=16bit so on
+
+    let mut extra_perams_size: [u8;2] = [0;2];
+    file.read_exact(&mut extra_perams_size[..]).unwrap();
+    let extra_perams_size = u16::from_le_bytes(extra_perams_size);
+    //this shouldn't exist if its pcm but data shows otherwize but its the size in bytes simillar to fmt chunk size
+
+    let processed_song = Song{
+        channels: channel_num,
+        sample_rate: sample_rate,
+        byte_rate: byte_rate,
+        block_align: block_align,
+        bits_per_sample: bits_per_sample,
+        extra_perams_size: extra_perams_size
+    };
+
+    processed_song
 }
