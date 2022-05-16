@@ -8,7 +8,11 @@ use std::io::BufReader;
 use std::fs::File;
 use std::str;
 
+mod song;
+use song::Song;
+
 fn main() {
+    song::test_func();
     let (send, recv) = channel();
     thread::spawn(move || {
         loop {
@@ -52,14 +56,15 @@ fn main() {
     }
 }
 
-fn play(fileName: &str){
+fn play(file_name: &str){
     // this will be way harder
     // find file
     // async play ---> may require a second channel :)
     // pause when pause is entered
-    let file_path = String::from("music/") + fileName;
+    let file_path = String::from("music/") + file_name;
     let file = File::open(file_path).unwrap();
-    let mut reader = BufReader::new(file);
+    let reader = BufReader::new(file);
+    drop(file);
     let mut header: [u8; 4] = [0; 4];
     reader.read_exact(&mut header[..]).unwrap();
     println!("data in buffer {:?}", header);
@@ -81,7 +86,9 @@ fn play(fileName: &str){
         //do stuff
         println!("an audio file");
     }
-    else {panic!("NOT A WAVE FILE");}
+    else {
+        panic!("NOT A WAVE FILE");
+    }
 }
 
 fn pause(){
@@ -101,4 +108,10 @@ fn args_spliter(arg: String) -> Vec<String>{
         });
     }
     args
+}
+
+fn song_constructor(file: &BufReader<File>) -> Song{
+    //read fmt chunk and create struct
+    let mut fmt_size: [u8; 4] = [0;4];
+    file.read_exact(&mut fmt_size);
 }
