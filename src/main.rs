@@ -120,10 +120,11 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     if &fmt_header != b"fmt " {
         panic!("header not found");
     }
+    let start = file.stream_position().unwrap();
     // gets size of fmt chunk
     let mut fmt_size: [u8;4] = [0;4];
     file.read_exact(&mut fmt_size[..]).unwrap();
-    let _fmt_size = u32::from_le_bytes(fmt_size);
+    let fmt_size = u32::from_le_bytes(fmt_size);
 
     let mut audio_format: [u8;2] = [0;2];
     file.read_exact(&mut audio_format[..]).unwrap();
@@ -155,10 +156,25 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     let bits_per_sample = u16::from_le_bytes(bits_per_sample);
     // if its an 8 = 8bits 16=16bit so on
 
-    let mut extra_perams_size: [u8;2] = [0;2];
-    file.read_exact(&mut extra_perams_size[..]).unwrap();
-    let extra_perams_size = u16::from_le_bytes(extra_perams_size);
-    //this shouldn't exist if its pcm but data shows otherwize but its the size in bytes simillar to fmt chunk size
+    let extra_perams_size: u16;
+    if audio_format != 1 {
+        // if its not a pcm check for extra perams length
+        println!("sus");
+        let mut extra_perams_buffer: [u8;2] = [0;2];
+        file.read_exact(&mut extra_perams_buffer[..]).unwrap();
+        extra_perams_size = u16::from_le_bytes(extra_perams_buffer);
+        //this shouldn't exist if its pcm but data shows otherwize but its the size in bytes simillar to fmt chunk size
+    }
+    else {
+        extra_perams_size = 0;
+    }
+    let expected_pos = fmt_size + 20;
+    let expected_pos: u64= expected_pos.into();
+    let extra_btye_count = expected_pos - file.stream_position().unwrap();
+    // this is so we know that hey there is more bytes here that are extra perams and we need to skip over them bc we dont care
+    if extra_btye_count > 0 {
+        println!("extrabytes found");
+    };
 
     let processed_song = Song{
         audio_format: audio_format,
