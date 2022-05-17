@@ -175,9 +175,8 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     let extra_btye_count = expected_pos - file.stream_position().unwrap();
     // this is so we know that hey there is more bytes here that are extra perams and we need to skip over them bc we dont care
     if extra_btye_count > 0 {
-        file.seek_relative(2);
+        file.seek_relative(extra_btye_count.try_into().unwrap());
         // skips past irrelevant data!
-        println!("extrabytes found");
     };
 
     let processed_song = Song{
