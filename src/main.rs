@@ -92,6 +92,10 @@ fn play(file_name: &str){
     }
     let song = song_constructor(&mut reader);
     println!("{:?}",song);
+
+    let mut data_header: [u8;4] = [0;4];
+    reader.read_exact(&mut data_header[..]).unwrap();
+    // audio data follows :)
 }
 
 fn pause(){
@@ -120,7 +124,6 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     if &fmt_header != b"fmt " {
         panic!("header not found");
     }
-    let start = file.stream_position().unwrap();
     // gets size of fmt chunk
     let mut fmt_size: [u8;4] = [0;4];
     file.read_exact(&mut fmt_size[..]).unwrap();
@@ -159,7 +162,6 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     let extra_perams_size: u16;
     if audio_format != 1 {
         // if its not a pcm check for extra perams length
-        println!("sus");
         let mut extra_perams_buffer: [u8;2] = [0;2];
         file.read_exact(&mut extra_perams_buffer[..]).unwrap();
         extra_perams_size = u16::from_le_bytes(extra_perams_buffer);
@@ -173,6 +175,8 @@ fn song_constructor(file: &mut BufReader<File>) -> Song{
     let extra_btye_count = expected_pos - file.stream_position().unwrap();
     // this is so we know that hey there is more bytes here that are extra perams and we need to skip over them bc we dont care
     if extra_btye_count > 0 {
+        file.seek_relative(2);
+        // skips past irrelevant data!
         println!("extrabytes found");
     };
 
