@@ -1,2 +1,2 @@
 # Air-Crab
-A simple CLI mp3 player made in rust
+A first project in Rust and mostly just a test to learn the language
